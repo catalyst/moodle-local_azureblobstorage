@@ -1,6 +1,3 @@
-> [!CAUTION]
-> This plugin is under development and is currently not ready for general use.
-
 # Azure Blob Storage SDK - Moodle Plugin
 
 A moodle plugin with functions to interact with the Microsoft Azure Blob Storage service.
@@ -52,4 +49,3 @@ If you would like commercial support or would like to sponsor additional improve
 to this plugin please contact us:
 
 https://www.catalyst-au.net/contact-us
-

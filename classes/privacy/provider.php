@@ -14,19 +14,27 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+namespace local_azureblobstorage\privacy;
+
 /**
- * Azure blob storage API
+ * Privacy system
  *
  * @package    local_azureblobstorage
  * @author     Matthew Hilton <matthewhilton@catalyst-au.net>
  * @copyright  2024 Catalyst IT
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
-defined('MOODLE_INTERNAL') || die();
-
-$plugin->version   = 2024101400;      // The current plugin version (Date: YYYYMMDDXX).
-$plugin->release   = 2024101400;      // Same as version.
-$plugin->requires  = 2024042200;      // 4.4.0, PHP 8.1.0+
-$plugin->component = "local_azureblobstorage";
-$plugin->maturity  = MATURITY_ALPHA;
+class provider implements \core_privacy\local\metadata\null_provider {
+    /**
+     * Get the language string identifier with the component's language
+     * file to explain why this plugin stores no data.
+     *
+     * This function is compatible with old php version. (Diff is the underscore '_' in the beginning)
+     * But the get_reason is still available because of the trait legacy_polyfill.
+     *
+     * @return  string
+     */
+    public static function get_reason(): string {
+        return 'privacy:no_data_reason';
+    }
+}
