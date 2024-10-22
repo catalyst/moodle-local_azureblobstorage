@@ -523,8 +523,13 @@ class stream_wrapper {
                 : false;
         }
 
+        // Redact the SAS token from the error to avoid accidental leakage.
+        $errormsg = implode("\n", (array) $errors);
+        $sastoken = $this->get_client()->sastoken;
+        $errormsg = str_replace($sastoken, 'SAS_TOKEN_REDACTED', $errormsg);
+
         // This is triggered when doing things like lstat() or stat().
-        trigger_error(implode("\n", (array) $errors), E_USER_WARNING);
+        trigger_error($errormsg, E_USER_WARNING);
         return false;
     }
 
