@@ -79,11 +79,11 @@ class api {
      */
     public function __construct(
         /** @var string Azure storage account name */
-        readonly public string $account,
+        public readonly string $account,
         /** @var string Azure storage container name */
-        readonly public string $container,
+        public readonly string $container,
         /** @var string SAS token for authentication */
-        readonly public string $sastoken
+        public readonly string $sastoken
     ) {
         $this->client = new Client();
     }
