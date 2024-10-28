@@ -132,7 +132,8 @@ class api {
      * @return PromiseInterface Promise that resolves a ResponseInterface value where the body is a stream of the blob contents.
      */
     public function get_blob_async(string $key): PromiseInterface {
-        return $this->client->getAsync($this->build_blob_url($key));
+        // Enable streaming response, useful for large files e.g. videos.
+        return $this->client->getAsync($this->build_blob_url($key), ['stream' => true]);
     }
 
     /**
