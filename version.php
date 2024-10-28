@@ -30,3 +30,4 @@ $plugin->release   = 2024101400;      // Same as version.
 $plugin->requires  = 2024042200;      // 4.4.0, PHP 8.1.0+
 $plugin->component = "local_azureblobstorage";
 $plugin->maturity  = MATURITY_ALPHA;
+$plugin->supported = [404, 405];
