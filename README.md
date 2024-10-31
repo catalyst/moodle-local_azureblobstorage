@@ -13,7 +13,7 @@ This is mainly used as a dependency when using Azure storage with tool_objectfs,
 
 | Branch           | Version support |  PHP Version |
 | ---------------- | --------------- | ------------ |
-| MOODLE_44_STABLE | 4.4 +           | 8.1.0+       |
+| MOODLE_402_STABLE | 4.2 +           | 8.0.0+       |
 
 ## Installation
 
