@@ -197,12 +197,10 @@ class stream_wrapper {
 
     /**
      * Returns current position of stream.
-     * @return bool
+     * @return int
      */
     public function stream_tell() {
-        return $this->boolCall(function() {
-            return $this->body->tell();
-        });
+        return $this->body->tell();
     }
 
     /**

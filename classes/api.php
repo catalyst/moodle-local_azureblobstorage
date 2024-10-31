@@ -23,6 +23,7 @@ use GuzzleHttp\Promise\Utils;
 use GuzzleHttp\Psr7\Request;
 use Psr\Http\Message\StreamInterface;
 use coding_exception;
+use GuzzleHttp\Exception\RequestException;
 
 /**
  * Azure blob storage API.
@@ -39,7 +40,7 @@ class api {
     /**
      * @var Client Guzzle HTTP client for making requests
      */
-    private readonly Client $client;
+    private Client $client;
 
     /**
      * @var int Threshold before blob uploads using multipart upload.
@@ -76,14 +77,17 @@ class api {
      * @param string $account Azure storage account name
      * @param string $container Azure storage container name (inside the given storage account).
      * @param string $sastoken SAS (Shared access secret) token for authentication.
+     * @param bool $redactsastoken If should react SAS token from error messages to avoid accidental leakage.
      */
     public function __construct(
         /** @var string Azure storage account name */
-        public readonly string $account,
+        public string $account,
         /** @var string Azure storage container name */
-        public readonly string $container,
+        public string $container,
         /** @var string SAS token for authentication */
-        public readonly string $sastoken
+        public string $sastoken,
+        /** @var bool If should redact SAS token from error messages to avoid accidental leakage */
+        public bool $redactsastoken = true
     ) {
         $this->client = new Client();
     }
@@ -133,7 +137,8 @@ class api {
      */
     public function get_blob_async(string $key): PromiseInterface {
         // Enable streaming response, useful for large files e.g. videos.
-        return $this->client->getAsync($this->build_blob_url($key), ['stream' => true]);
+        return $this->client->getAsync($this->build_blob_url($key), ['stream' => true])
+            ->then(null, $this->clean_exception_sas_if_needed());
     }
 
     /**
@@ -142,7 +147,7 @@ class api {
      * @return PromiseInterface Promise that resolves a ResponseInterface value where the properties are in the response headers.
      */
     public function get_blob_properties_async(string $key): PromiseInterface {
-        return $this->client->headAsync($this->build_blob_url($key));
+        return $this->client->headAsync($this->build_blob_url($key))->then(null, $this->clean_exception_sas_if_needed());
     }
 
     /**
@@ -151,7 +156,7 @@ class api {
      * @return PromiseInterface Promise that resolves once the delete request succeeds.
      */
     public function delete_blob_async(string $key): PromiseInterface {
-        return $this->client->deleteAsync($this->build_blob_url($key));
+        return $this->client->deleteAsync($this->build_blob_url($key))->then(null, $this->clean_exception_sas_if_needed());
     }
 
     /**
@@ -194,7 +199,7 @@ class api {
                 ],
                 'body' => $contentstream,
             ]
-        );
+        )->then(null, $this->clean_exception_sas_if_needed());
     }
 
     /**
@@ -222,13 +227,13 @@ class api {
             while (true) {
                 $content = $contentstream->read(self::MULTIPART_BLOCK_SIZE);
 
-                // Each block has its own md5 specific to itself.
-                $blockmd5 = base64_encode(hex2bin(md5($content)));
-
                 // Finished reading, nothing more to upload.
                 if (empty($content)) {
                     break;
                 }
+
+                // Each block has its own md5 specific to itself.
+                $blockmd5 = base64_encode(hex2bin(md5($content)));
 
                 // The block ID must be the same length regardles of the counter value.
                 // So pad them with zeros.
@@ -237,7 +242,7 @@ class api {
                 );
 
                 $request = new Request('PUT', $this->build_blob_block_url($key, $blockid), ['content-md5' => $blockmd5], $content);
-                $promises[] = $this->client->sendAsync($request);
+                $promises[] = $this->client->sendAsync($request)->then(null, $this->clean_exception_sas_if_needed());
                 $blockids[] = $blockid;
             };
 
@@ -253,14 +258,14 @@ class api {
             $bodymd5 = base64_encode(hex2bin(md5($body)));
             $request = new Request('PUT', $this->build_blocklist_url($key),
                 ['Content-Type' => 'application/xml', 'content-md5' => $bodymd5], $body);
-            $this->client->send($request);
+            $this->client->sendAsync($request)->then(null, $this->clean_exception_sas_if_needed())->wait();
 
             // Now it is combined, set the md5 and content type on the completed blob.
             $request = new Request('PUT', $this->build_blob_properties_url($key), [
                 'x-ms-blob-content-md5' => base64_encode($md5),
                 'x-ms-blob-content-type' => $contenttype,
             ]);
-            $this->client->send($request);
+            $this->client->sendAsync($request)->then(null, $this->clean_exception_sas_if_needed())->wait();
 
             // Done, resolve the entire promise.
             $entirepromise->resolve('fulfilled');
@@ -293,5 +298,20 @@ class api {
         }
         $string .= "\n</BlockList>";
         return $string;
+    }
+
+    /**
+     * Returns a request exception handling function that redacts the SAS token from error messages if needed.
+     * @return callable
+     */
+    private function clean_exception_sas_if_needed(): callable {
+        return function(RequestException $ex) {
+            if ($this->redactsastoken) {
+                $newmsg = str_replace($this->sastoken, '[SAS TOKEN REDACTED]', $ex->getMessage());
+                $exceptiontype = get_class($ex);
+                throw new $exceptiontype($newmsg, $ex->getRequest(), $ex->getResponse(), $ex, $ex->getHandlerContext());
+            }
+            throw $ex;
+        };
     }
 }

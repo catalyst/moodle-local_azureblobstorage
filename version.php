@@ -27,7 +27,7 @@ defined('MOODLE_INTERNAL') || die();
 
 $plugin->version   = 2024101400;      // The current plugin version (Date: YYYYMMDDXX).
 $plugin->release   = 2024101400;      // Same as version.
-$plugin->requires  = 2024042200;      // 4.4.0, PHP 8.1.0+
+$plugin->requires  = 2023042400;      // 4.2.0, PHP 8.0.0+
 $plugin->component = "local_azureblobstorage";
 $plugin->maturity  = MATURITY_ALPHA;
-$plugin->supported = [404, 405];
+$plugin->supported = [402, 405];
