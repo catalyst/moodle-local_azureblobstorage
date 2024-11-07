@@ -27,7 +27,7 @@ git clone https://github.com/catalyst/moodle-local_azureblobstorage local/azureb
 ## How to use
 There are two usage options:
 1. Call the API functions directly e.g. `api::put_blob`
-2. Register the stream wrapper, which allows you to use PHP's built in file methods to move files e.g. `copy('/file.txt', 'blob://container/file')`
+2. Register the stream wrapper, which allows you to use PHP's built in file methods to move files e.g. `copy('/file.txt', 'azure://container/file')`
 
 # Crafted by Catalyst IT
 

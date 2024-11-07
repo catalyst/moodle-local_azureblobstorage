@@ -49,8 +49,8 @@ class stream_wrapper {
     /** @var string Mode in which the stream was opened */
     private $mode;
 
-    /** @var string The opened protocol (e.g. "blob") */
-    private $protocol = 'blob';
+    /** @var string The opened protocol (e.g. "azure") */
+    private $protocol = 'azure';
 
     /** @var HashContext Hash resource that is sent when flushing the file to Azure. */
     private $hash;
@@ -62,12 +62,12 @@ class stream_wrapper {
     private $key = null;
 
     /**
-     * Register the blob://' stream wrapper
+     * Register the stream wrapper for the protocol
      *
      * @param api $client Client to use with the stream wrapper
      * @param string $protocol Protocol to register as.
      */
-    public static function register(api $client, $protocol = 'blob') {
+    public static function register(api $client, $protocol = 'azure') {
         if (in_array($protocol, stream_get_wrappers())) {
             stream_wrapper_unregister($protocol);
         }
@@ -286,7 +286,7 @@ class stream_wrapper {
      */
     private function initprotocol($path) {
         $parts = explode('://', $path, 2);
-        $this->protocol = $parts[0] ?: 'blob';
+        $this->protocol = $parts[0] ?: 'azure';
     }
 
     /**
@@ -313,7 +313,7 @@ class stream_wrapper {
         // it might not have been parsed correctly.
         if (!$this->key) {
             $errors[] = 'Could not parse the filepath. You must specify a path in the '
-                . 'form of blob://container/key';
+                . 'form of azure://key';
         }
 
         // Ensure mode is valid, we don't support every mode.
