@@ -314,4 +314,31 @@ class api {
             throw $ex;
         };
     }
+
+    /**
+     * Returns the unix timestamp when the sas token expires.
+     * @return int|null unix timestamp, or null if unable to parse.
+     */
+    public function get_token_expiry_time(): ?int {
+        // Parse the sas token (it just uses url parameter encoding).
+        $parts = [];
+        parse_str($this->sastoken, $parts);
+
+        // Get the 'se' part (signed expiry).
+        if (!isset($parts['se'])) {
+            // Assume expired (malformed).
+            return null;
+        }
+
+        // Parse timestamp string into unix timestamp int.
+        $expirystr = $parts['se'];
+        $parsed = strtotime($expirystr);
+
+        if ($parsed === false) {
+            // Failed to parse string time.
+            return null;
+        }
+
+        return $parsed;
+    }
 }
