@@ -427,6 +427,8 @@ class stream_wrapper {
         }
 
         // Wrap the body in a caching entity body if seeking is allowed.
+        // Note this is extremely important when playing large video files
+        // as they need to be able to seek while playing short chunks at a time.
         if ($this->get_option('seekable') && !$this->body->isSeekable()) {
             $this->body = new CachingStream($this->body);
         }
