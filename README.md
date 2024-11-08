@@ -1,6 +1,3 @@
-> [!CAUTION]
-> This plugin is under development and is currently not ready for general use.
-
 # Azure Blob Storage SDK - Moodle Plugin
 
 A moodle plugin with functions to interact with the Microsoft Azure Blob Storage service.
@@ -16,7 +13,7 @@ This is mainly used as a dependency when using Azure storage with tool_objectfs,
 
 | Branch           | Version support |  PHP Version |
 | ---------------- | --------------- | ------------ |
-| MOODLE_44_STABLE | 4.4 +           | 8.1.0+       |
+| MOODLE_402_STABLE | 4.2 +           | 8.0.0+       |
 
 ## Installation
 
@@ -30,7 +27,7 @@ git clone https://github.com/catalyst/moodle-local_azureblobstorage local/azureb
 ## How to use
 There are two usage options:
 1. Call the API functions directly e.g. `api::put_blob`
-2. Register the stream wrapper, which allows you to use PHP's built in file methods to move files e.g. `copy('/file.txt', 'blob://container/file')`
+2. Register the stream wrapper, which allows you to use PHP's built in file methods to move files e.g. `copy('/file.txt', 'azure://container/file')`
 
 # Crafted by Catalyst IT
 
@@ -52,4 +49,3 @@ If you would like commercial support or would like to sponsor additional improve
 to this plugin please contact us:
 
 https://www.catalyst-au.net/contact-us
-
