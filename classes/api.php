@@ -60,6 +60,11 @@ class api {
     const MULTIPART_BLOCK_SIZE = 32 * 1024 * 1024; // 32MB.
 
     /**
+     * @var string number of blocks to upload concurrently
+     */
+    const MULTIPART_CONCURRENCY = 5;
+
+    /**
      * @var int Maximum number of blocks allowed. This is set by Azure.
      * @see https://learn.microsoft.com/en-us/rest/api/storageservices/understanding-block-blobs--append-blobs--and-page-blobs#about-block-blobs
      */
@@ -222,6 +227,13 @@ class api {
      */
     public function put_blob_multipart_async(string $key, StreamInterface $contentstream, string $md5,
         string $contenttype = self::DEFAULT_CONTENT_TYPE): PromiseInterface {
+
+        // Validate that file fits into the maximum number of blocks.
+        $filesize = $contentstream->getSize();
+        if (ceil($filesize / self::MULTIPART_BLOCK_SIZE) > self::MAX_NUMBER_BLOCKS) {
+            throw new coding_exception("Max number of blocks reached, block size too small ?");
+        }
+
         // We make multiple calls to the Azure API to do multipart uploads, so wrap the entire thing
         // into a single promise.
         $entirepromise = new Promise(function() use (&$entirepromise, $key, $contentstream, $md5, $contenttype) {
@@ -229,6 +241,7 @@ class api {
             $counter = 0;
             $blockids = [];
             $promises = [];
+            $concurrencycount = 0;
 
             while (true) {
                 $content = $contentstream->read(self::MULTIPART_BLOCK_SIZE);
@@ -237,6 +250,8 @@ class api {
                 if (empty($content)) {
                     break;
                 }
+
+                $concurrencycount++;
 
                 // Each block has its own md5 specific to itself.
                 $blockmd5 = base64_encode(hex2bin(md5($content)));
@@ -250,13 +265,19 @@ class api {
                 $request = new Request('PUT', $this->build_blob_block_url($key, $blockid), ['content-md5' => $blockmd5], $content);
                 $promises[] = $this->client->sendAsync($request)->then(null, $this->rethrow_cleaned_exception_if_needed());
                 $blockids[] = $blockid;
+
+                // Max number of concurrent uploads reached, wait until they're done.
+                if ($concurrencycount == self::MULTIPART_CONCURRENCY) {
+
+                    // Will throw exception if any fail - if any fail we want to abort early.
+                    Utils::unwrap($promises);
+                    $concurrencycount = 0;
+                    $promises = [];
+                }
+
             };
 
-            if (count($blockids) > self::MAX_NUMBER_BLOCKS) {
-                throw new coding_exception("Max number of blocks reached, block size too small ?");
-            }
-
-            // Will throw exception if any fail - if any fail we want to abort early.
+            // Wait for any remaining uploads to complete.
             Utils::unwrap($promises);
 
             // Commit the blocks together into a single blob.
